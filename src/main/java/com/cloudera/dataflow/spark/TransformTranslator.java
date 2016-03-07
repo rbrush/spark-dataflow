@@ -56,6 +56,7 @@ import org.apache.avro.mapreduce.AvroKeyInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -538,7 +539,8 @@ public final class TransformTranslator {
     };
   }
 
-  private static <K, V> TransformEvaluator<HadoopIO.Read.Bound<K, V>> readHadoop() {
+  private static <K extends Writable, V extends Writable>
+  TransformEvaluator<HadoopIO.Read.Bound<K, V>> readHadoop() {
     return new TransformEvaluator<HadoopIO.Read.Bound<K, V>>() {
       @Override
       public void evaluate(HadoopIO.Read.Bound<K, V> transform, EvaluationContext context) {
@@ -561,7 +563,8 @@ public final class TransformTranslator {
     };
   }
 
-  private static <K, V> TransformEvaluator<HadoopIO.Write.Bound<K, V>> writeHadoop() {
+  private static <K extends Writable, V extends Writable>
+  TransformEvaluator<HadoopIO.Write.Bound<K, V>> writeHadoop() {
     return new TransformEvaluator<HadoopIO.Write.Bound<K, V>>() {
       @Override
       public void evaluate(HadoopIO.Write.Bound<K, V> transform, EvaluationContext context) {

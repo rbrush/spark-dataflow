@@ -15,8 +15,10 @@
 package com.cloudera.dataflow.spark.streaming;
 
 import com.google.cloud.dataflow.sdk.Pipeline;
-import com.google.cloud.dataflow.sdk.repackaged.com.google.common.collect.ImmutableMap;
-import com.google.cloud.dataflow.sdk.repackaged.com.google.common.collect.ImmutableSet;
+import com.google.cloud.dataflow.sdk.coders.KvCoder;
+import com.google.cloud.dataflow.sdk.coders.StringUtf8Coder;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.cloud.dataflow.sdk.testing.DataflowAssert;
 import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
@@ -102,9 +104,12 @@ public class KafkaStreamingTest {
 
     PCollection<KV<String, String>> kafkaInput = p.apply(KafkaIO.Read.from(StringDecoder.class,
         StringDecoder.class, String.class, String.class, Collections.singleton(TOPIC),
-        kafkaParams));
+        kafkaParams))
+        .setCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()));
+
     PCollection<KV<String, String>> windowedWords = kafkaInput
         .apply(Window.<KV<String, String>>into(FixedWindows.of(Duration.standardSeconds(1))));
+
 
     PCollection<String> formattedKV = windowedWords.apply(ParDo.of(new FormatKVFn()));
 

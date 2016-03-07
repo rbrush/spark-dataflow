@@ -17,6 +17,7 @@ package com.cloudera.dataflow.hadoop;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.cloud.dataflow.sdk.coders.KvCoder;
 import com.google.cloud.dataflow.sdk.io.ShardNameTemplate;
 import com.google.cloud.dataflow.sdk.transforms.PTransform;
 import com.google.cloud.dataflow.sdk.util.WindowingStrategy;
@@ -25,6 +26,7 @@ import com.google.cloud.dataflow.sdk.values.PCollection;
 import com.google.cloud.dataflow.sdk.values.PDone;
 import com.google.cloud.dataflow.sdk.values.PInput;
 import com.google.common.base.Preconditions;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
@@ -40,12 +42,14 @@ public final class HadoopIO {
     private Read() {
     }
 
-    public static <K, V> Bound<K, V> from(String filepattern,
-        Class<? extends FileInputFormat<K, V>> format, Class<K> key, Class<V> value) {
+    public static <K extends Writable, V extends Writable> Bound<K, V>
+    from(String filepattern,
+         Class<? extends FileInputFormat<K, V>> format, Class<K> key, Class<V> value) {
       return new Bound<>(filepattern, format, key, value);
     }
 
-    public static class Bound<K, V> extends PTransform<PInput, PCollection<KV<K, V>>> {
+    public static class Bound<K extends Writable, V extends Writable>
+        extends PTransform<PInput, PCollection<KV<K, V>>> {
 
       private final String filepattern;
       private final Class<? extends FileInputFormat<K, V>> formatClass;
@@ -86,8 +90,14 @@ public final class HadoopIO {
 
       @Override
       public PCollection<KV<K, V>> apply(PInput input) {
-        return PCollection.createPrimitiveOutputInternal(input.getPipeline(),
+        PCollection<KV<K, V>> collection =
+            PCollection.createPrimitiveOutputInternal(input.getPipeline(),
             WindowingStrategy.globalDefault(), PCollection.IsBounded.BOUNDED);
+
+        collection.setCoder(KvCoder.of(WritableCoder.of(keyClass),
+            WritableCoder.of(valueClass)));
+
+        return collection;
       }
 
     }
